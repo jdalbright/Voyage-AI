@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 
-interface PlannerFormValues {
+export interface PlannerFormValues {
   originCity: string;
   destinationCity: string;
   startDate: string;
@@ -9,11 +9,17 @@ interface PlannerFormValues {
   budget: "budget" | "moderate" | "luxury";
 }
 
+interface PlannerFormProps {
+  onSubmit: (values: PlannerFormValues) => Promise<void> | void;
+  isSubmitting?: boolean;
+  submitError?: string | null;
+}
+
 /**
  * PlannerForm renders a controlled form for gathering itinerary inputs prior to
  * dispatching a request to the itinerary generation API.
  */
-function PlannerForm() {
+function PlannerForm({ onSubmit, isSubmitting = false, submitError = null }: PlannerFormProps) {
   const [formValues, setFormValues] = useState<PlannerFormValues>({
     originCity: "",
     destinationCity: "",
@@ -23,14 +29,9 @@ function PlannerForm() {
     budget: "moderate"
   });
 
-  /**
-   * handleSubmit will call the generate-itinerary API once the backend logic is implemented.
-   */
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // TODO: Replace with `fetch`/`axios` POST request to `/api/generate-itinerary`.
-    // The payload should contain `formValues` and handle the response accordingly.
-    console.log("Planner form submitted", formValues);
+    await onSubmit(formValues);
   };
 
   return (
@@ -42,6 +43,12 @@ function PlannerForm() {
       <p className="mt-2 text-sm text-slate-300">
         Tell us about your dream trip and we&apos;ll craft a bespoke itinerary.
       </p>
+
+      {submitError && (
+        <p className="mt-4 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">
+          {submitError}
+        </p>
+      )}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col text-sm font-medium text-slate-200">
@@ -132,9 +139,10 @@ function PlannerForm() {
 
       <button
         type="submit"
-        className="mt-6 w-full rounded-md bg-indigo-500 px-4 py-3 text-base font-semibold text-white transition hover:bg-indigo-400"
+        disabled={isSubmitting}
+        className="mt-6 w-full rounded-md bg-indigo-500 px-4 py-3 text-base font-semibold text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-70"
       >
-        Generate My Itinerary
+        {isSubmitting ? "Generating..." : "Generate My Itinerary"}
       </button>
     </form>
   );

@@ -1,52 +1,46 @@
 import Head from "next/head";
 import { useState } from "react";
-import PlannerForm from "../components/PlannerForm";
+import PlannerForm, { PlannerFormValues } from "../components/PlannerForm";
 import ItineraryDisplay, { ItineraryData } from "../components/ItineraryDisplay";
 import BlueskyFeed from "../components/BlueskyFeed";
-
-const MOCK_ITINERARY: ItineraryData = {
-  tripName: "Sample Voyage: Tokyo Discovery",
-  origin: "San Francisco",
-  destination: "Tokyo",
-  startDate: "2024-09-10",
-  endDate: "2024-09-17",
-  days: [
-    {
-      day: "Day 1",
-      summary: "Arrive in Tokyo, settle into the hotel, and explore Shinjuku.",
-      flights: ["SFO ➜ HND · JL 1"],
-      hotels: ["Park Hyatt Tokyo"],
-      activities: [
-        {
-          time: "Evening",
-          description: "Stroll through Omoide Yokocho and enjoy yakitori."
-        }
-      ]
-    },
-    {
-      day: "Day 2",
-      summary: "Cultural immersion with visits to Asakusa and the Sumida River.",
-      flights: [],
-      hotels: ["Park Hyatt Tokyo"],
-      activities: [
-        {
-          time: "Morning",
-          description: "Visit Sensō-ji Temple and Nakamise shopping street."
-        },
-        {
-          time: "Afternoon",
-          description: "Cruise down the Sumida River with skyline views."
-        }
-      ]
-    }
-  ]
-};
 
 /**
  * Home surfaces the core Voyage AI experience: itinerary planning, itinerary output, and social inspiration.
  */
 function Home() {
-  const [itinerary] = useState<ItineraryData | null>(MOCK_ITINERARY);
+  const [itinerary, setItinerary] = useState<ItineraryData | null>(null);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+
+  const handleGenerateItinerary = async (formValues: PlannerFormValues) => {
+    setIsGenerating(true);
+    setGenerateError(null);
+
+    try {
+      const response = await fetch("/api/generate-itinerary", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(formValues)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate itinerary: ${response.status}`);
+      }
+
+      const payload = (await response.json()) as { itinerary: ItineraryData };
+      setItinerary(payload.itinerary);
+    } catch (submitError) {
+      const message =
+        submitError instanceof Error
+          ? submitError.message
+          : "An unexpected error occurred while generating your itinerary.";
+      setGenerateError(message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <>
@@ -72,8 +66,19 @@ function Home() {
           </header>
 
           <section className="mt-12 grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
-            <PlannerForm />
-            <ItineraryDisplay itinerary={itinerary} />
+            <PlannerForm
+              onSubmit={handleGenerateItinerary}
+              isSubmitting={isGenerating}
+              submitError={generateError}
+            />
+            <div className="space-y-4">
+              {isGenerating && (
+                <p className="rounded-md border border-indigo-500/40 bg-indigo-500/10 p-3 text-sm text-indigo-200">
+                  Crafting your itinerary...
+                </p>
+              )}
+              <ItineraryDisplay itinerary={itinerary} />
+            </div>
           </section>
 
           <BlueskyFeed tag="#travel" />
