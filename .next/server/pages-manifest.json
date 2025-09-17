@@ -1,7 +1,1 @@
-{
-  "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
-  "/_document": "pages/_document.js",
-  "/api/get-bluesky-posts": "pages/api/get-bluesky-posts.js",
-  "/": "pages/index.js"
-}
+{"/_app":"pages/_app.js","/api/get-bluesky-posts":"pages/api/get-bluesky-posts.js","/api/generate-itinerary":"pages/api/generate-itinerary.js","/api/stripe-checkout":"pages/api/stripe-checkout.js","/":"pages/index.html","/store":"pages/store.html","/_error":"pages/_error.js","/_document":"pages/_document.js","/404":"pages/404.html"}
