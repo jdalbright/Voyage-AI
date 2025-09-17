@@ -73,13 +73,21 @@ LLM_API_KEY=your_llm_api_key
    - Copy `.env.local.example` to `.env.local` and populate each value.
 3. **Run the development server**
    ```bash
-   npm run dev
-   ```
+npm run dev
+```
 4. **Open in browser**
    - Navigate to http://localhost:3000 to view the landing page.
    - Visit http://localhost:3000/store for the storefront.
 
+## Development Status
+- Core Next.js + TypeScript scaffold in place with Tailwind styling and shared layout primitives.
+- Planner form, itinerary renderer, Bluesky feed, and storefront components render with mock data.
+- API routes respond with placeholder payloads that outline future Google, Bluesky, Stripe, and LLM integrations.
+- Local build verified via `npm run build`.
+
 ## Next Steps
 - Connect the planner submission to the itinerary generation API using `fetch` or `axios`.
-- Replace mock data in API routes with real integrations (Google Maps/Flights, Bluesky, Stripe, LLM).
+- Implement real integrations for Google Maps/Flights, Bluesky social data, Stripe Checkout, and the chosen LLM.
 - Add persistent storage or caching to capture user itineraries and product purchases.
+- Design loading/error states tied to actual API responses across the UI.
+- Expand testing (unit/integration) once core service integrations land.
