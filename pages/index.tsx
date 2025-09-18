@@ -12,11 +12,13 @@ function Home() {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [hasGeneratedItinerary, setHasGeneratedItinerary] = useState<boolean>(false);
+  const [lastRequest, setLastRequest] = useState<PlannerFormValues | null>(null);
 
   const handleGenerateItinerary = async (formValues: PlannerFormValues) => {
     setIsGenerating(true);
     setGenerateError(null);
     setHasGeneratedItinerary(false);
+    setLastRequest({ ...formValues });
 
     try {
       const response = await fetch("/api/generate-itinerary", {
@@ -44,6 +46,14 @@ function Home() {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const retryLastGeneration = () => {
+    if (!lastRequest || isGenerating) {
+      return;
+    }
+
+    void handleGenerateItinerary(lastRequest);
   };
 
   return (
@@ -85,6 +95,20 @@ function Home() {
                 <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-200">
                   Your personalized itinerary is ready—enjoy the highlights below!
                 </p>
+              )}
+              {generateError && !isGenerating && (
+                <div className="space-y-3 rounded-md border border-red-500/50 bg-red-500/10 p-3 text-sm text-red-200">
+                  <p>{generateError}</p>
+                  {lastRequest && (
+                    <button
+                      type="button"
+                      onClick={retryLastGeneration}
+                      className="inline-flex items-center justify-center rounded-md border border-red-400/40 px-3 py-1.5 text-xs font-semibold text-red-100 transition hover:border-red-300/60 hover:text-white"
+                    >
+                      Try again
+                    </button>
+                  )}
+                </div>
               )}
               <ItineraryDisplay itinerary={itinerary} />
             </div>
