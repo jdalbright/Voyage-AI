@@ -28,11 +28,23 @@ function PlannerForm({ onSubmit, isSubmitting = false, submitError = null }: Pla
     interests: "",
     budget: "moderate"
   });
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const start = new Date(formValues.startDate);
+    const end = new Date(formValues.endDate);
+
+    if (start > end) {
+      setLocalError("End date must be on or after the start date.");
+      return;
+    }
+
+    setLocalError(null);
     await onSubmit(formValues);
   };
+
+  const isDateRangeInvalid = Boolean(localError);
 
   return (
     <form
@@ -44,9 +56,9 @@ function PlannerForm({ onSubmit, isSubmitting = false, submitError = null }: Pla
         Tell us about your dream trip and we&apos;ll craft a bespoke itinerary.
       </p>
 
-      {submitError && (
+      {(submitError || localError) && (
         <p className="mt-4 rounded-md border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-300">
-          {submitError}
+          {localError ?? submitError}
         </p>
       )}
 
@@ -88,7 +100,9 @@ function PlannerForm({ onSubmit, isSubmitting = false, submitError = null }: Pla
             onChange={(event) =>
               setFormValues((prev) => ({ ...prev, startDate: event.target.value }))
             }
-            className="mt-2 rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-base text-white focus:border-indigo-400 focus:outline-none"
+            className={`mt-2 rounded-md border bg-slate-800 px-3 py-2 text-base text-white focus:border-indigo-400 focus:outline-none ${
+              isDateRangeInvalid ? "border-red-500" : "border-slate-700"
+            }`}
           />
         </label>
 
@@ -101,7 +115,9 @@ function PlannerForm({ onSubmit, isSubmitting = false, submitError = null }: Pla
             onChange={(event) =>
               setFormValues((prev) => ({ ...prev, endDate: event.target.value }))
             }
-            className="mt-2 rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-base text-white focus:border-indigo-400 focus:outline-none"
+            className={`mt-2 rounded-md border bg-slate-800 px-3 py-2 text-base text-white focus:border-indigo-400 focus:outline-none ${
+              isDateRangeInvalid ? "border-red-500" : "border-slate-700"
+            }`}
           />
         </label>
       </div>

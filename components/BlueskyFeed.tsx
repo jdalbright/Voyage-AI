@@ -18,6 +18,7 @@ function BlueskyFeed({ tag = "#travel" }: BlueskyFeedProps) {
   const [posts, setPosts] = useState<BlueskyPost[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const skeletonCards = Array.from({ length: 3 });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -61,8 +62,28 @@ function BlueskyFeed({ tag = "#travel" }: BlueskyFeedProps) {
         </div>
       </div>
 
-      {isLoading && (
-        <p className="mt-4 text-sm text-slate-400">Loading travel stories…</p>
+      {isLoading && posts.length === 0 && (
+        <>
+          <p className="sr-only" role="status">
+            Loading travel stories
+          </p>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {skeletonCards.map((_, index) => (
+              <article
+                key={`skeleton-${index}`}
+                className="animate-pulse rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-lg"
+              >
+                <div className="h-3 w-24 rounded bg-slate-700/80" />
+                <div className="mt-4 space-y-3">
+                  <div className="h-3 w-full rounded bg-slate-800/80" />
+                  <div className="h-3 w-5/6 rounded bg-slate-800/70" />
+                  <div className="h-3 w-2/3 rounded bg-slate-800/60" />
+                </div>
+                <div className="mt-6 h-2 w-32 rounded bg-slate-700/60" />
+              </article>
+            ))}
+          </div>
+        </>
       )}
 
       {error && (
@@ -71,7 +92,7 @@ function BlueskyFeed({ tag = "#travel" }: BlueskyFeedProps) {
         </p>
       )}
 
-      {!isLoading && !error && (
+      {!error && (
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {posts.length ? (
             posts.map((post) => (
@@ -88,11 +109,11 @@ function BlueskyFeed({ tag = "#travel" }: BlueskyFeedProps) {
                 </p>
               </article>
             ))
-          ) : (
+          ) : !isLoading ? (
             <p className="col-span-full rounded-md border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-400">
               No posts found for this tag yet.
             </p>
-          )}
+          ) : null}
         </div>
       )}
     </section>

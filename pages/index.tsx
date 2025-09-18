@@ -11,10 +11,12 @@ function Home() {
   const [itinerary, setItinerary] = useState<ItineraryData | null>(null);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
+  const [hasGeneratedItinerary, setHasGeneratedItinerary] = useState<boolean>(false);
 
   const handleGenerateItinerary = async (formValues: PlannerFormValues) => {
     setIsGenerating(true);
     setGenerateError(null);
+    setHasGeneratedItinerary(false);
 
     try {
       const response = await fetch("/api/generate-itinerary", {
@@ -31,12 +33,14 @@ function Home() {
 
       const payload = (await response.json()) as { itinerary: ItineraryData };
       setItinerary(payload.itinerary);
+      setHasGeneratedItinerary(true);
     } catch (submitError) {
       const message =
         submitError instanceof Error
           ? submitError.message
           : "An unexpected error occurred while generating your itinerary.";
       setGenerateError(message);
+      setHasGeneratedItinerary(false);
     } finally {
       setIsGenerating(false);
     }
@@ -75,6 +79,11 @@ function Home() {
               {isGenerating && (
                 <p className="rounded-md border border-indigo-500/40 bg-indigo-500/10 p-3 text-sm text-indigo-200">
                   Crafting your itinerary...
+                </p>
+              )}
+              {hasGeneratedItinerary && itinerary && !generateError && !isGenerating && (
+                <p className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-200">
+                  Your personalized itinerary is ready—enjoy the highlights below!
                 </p>
               )}
               <ItineraryDisplay itinerary={itinerary} />
