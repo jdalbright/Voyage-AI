@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 
 export interface PlannerFormValues {
   originCity: string;
@@ -29,6 +29,33 @@ function PlannerForm({ onSubmit, isSubmitting = false, submitError = null }: Pla
     budget: "moderate"
   });
   const [localError, setLocalError] = useState<string | null>(null);
+
+  // Load form data from localStorage on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedFormData = localStorage.getItem('voyage-ai-form-data');
+        if (savedFormData) {
+          const parsedData = JSON.parse(savedFormData);
+          setFormValues(parsedData);
+        }
+      } catch (error) {
+        console.error('Error loading saved form data:', error);
+        localStorage.removeItem('voyage-ai-form-data');
+      }
+    }
+  }, []);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Only save if at least one field has data
+      const hasData = Object.values(formValues).some(value => value && value.trim() !== '');
+      if (hasData) {
+        localStorage.setItem('voyage-ai-form-data', JSON.stringify(formValues));
+      }
+    }
+  }, [formValues]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

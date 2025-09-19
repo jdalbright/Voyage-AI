@@ -1,7 +1,11 @@
 {
   "/_app": "pages/_app.js",
+  "/api/get-bluesky-posts": "pages/api/get-bluesky-posts.js",
+  "/api/generate-itinerary": "pages/api/generate-itinerary.js",
+  "/": "pages/index.html",
+  "/store": "pages/store.html",
+  "/api/stripe-checkout": "pages/api/stripe-checkout.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/": "pages/index.js",
-  "/api/get-bluesky-posts": "pages/api/get-bluesky-posts.js"
+  "/404": "pages/404.html"
 }

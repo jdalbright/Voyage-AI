@@ -29,6 +29,92 @@ interface ItineraryDisplayProps {
  * providing placeholders for downstream integrations (flights, hotels, activities).
  */
 function ItineraryDisplay({ itinerary }: ItineraryDisplayProps) {
+  const exportToPDF = async () => {
+    if (!itinerary) return;
+
+    const { jsPDF } = await import('jspdf');
+    const html2canvas = (await import('html2canvas')).default;
+
+    const itineraryElement = document.getElementById('itinerary-content');
+    if (!itineraryElement) return;
+
+    const canvas = await html2canvas(itineraryElement, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#0f172a'
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF('p', 'mm', 'a4');
+
+    const imgWidth = 210;
+    const pageHeight = 295;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    pdf.save(`${itinerary.tripName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`);
+  };
+
+  const exportToCalendar = () => {
+    if (!itinerary) return;
+
+    const createICSEvent = (day: DayItinerary, date: Date) => {
+      const formatDate = (d: Date) => {
+        return d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      };
+
+      const eventDate = new Date(date);
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59);
+
+      const activities = day.activities.map(a => `${a.time}: ${a.description}`).join('\\n');
+      const hotels = day.hotels.length ? `Hotels: ${day.hotels.join(', ')}\\n` : '';
+      const flights = day.flights.length ? `Flights: ${day.flights.join(', ')}\\n` : '';
+
+      return `BEGIN:VEVENT
+DTSTART:${formatDate(eventDate)}
+DTEND:${formatDate(endDate)}
+SUMMARY:${day.day} - ${itinerary.destination}
+DESCRIPTION:${day.summary}\\n\\n${flights}${hotels}Activities:\\n${activities}
+LOCATION:${itinerary.destination}
+END:VEVENT`;
+    };
+
+    const startDate = new Date(itinerary.startDate);
+    const events = itinerary.days.map((day, index) => {
+      const dayDate = new Date(startDate);
+      dayDate.setDate(startDate.getDate() + index);
+      return createICSEvent(day, dayDate);
+    }).join('\n');
+
+    const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Voyage AI//Travel Itinerary//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:${itinerary.tripName}
+X-WR-CALDESC:Travel itinerary for ${itinerary.origin} to ${itinerary.destination}
+${events}
+END:VCALENDAR`;
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${itinerary.tripName.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`;
+    link.click();
+  };
   if (!itinerary) {
     return (
       <div className="mt-10 rounded-2xl border border-dashed border-slate-700 p-8 text-center text-slate-400">
@@ -81,10 +167,10 @@ function ItineraryDisplay({ itinerary }: ItineraryDisplayProps) {
   };
 
   return (
-    <section className="mt-10 space-y-8">
+    <section className="mt-10 space-y-8" id="itinerary-content">
       {/* Enhanced Header */}
-      <header className="rounded-2xl bg-gradient-to-r from-slate-900/90 to-slate-800/90 p-8 shadow-xl backdrop-blur border border-slate-700/50">
-        <div className="flex items-start justify-between">
+      <header className="rounded-2xl bg-gradient-to-r from-slate-900/90 to-slate-800/90 p-6 sm:p-8 shadow-xl backdrop-blur border border-slate-700/50">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-500/20">
@@ -117,14 +203,39 @@ function ItineraryDisplay({ itinerary }: ItineraryDisplayProps) {
                 <span>{itinerary.destination}</span>
               </div>
             </div>
-            <div className="mt-3 flex items-center gap-2 text-sm text-slate-400">
+            <div className="flex items-center gap-3 text-slate-400">
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span>{formatDate(itinerary.startDate)} – {formatDate(itinerary.endDate)}</span>
+              <span className="font-medium">{formatDate(itinerary.startDate)} – {formatDate(itinerary.endDate)}</span>
               <span className="mx-2">•</span>
-              <span>{itinerary.days.length} days</span>
+              <span className="text-slate-300 font-semibold">{itinerary.days.length} days</span>
             </div>
+          </div>
+
+          {/* Export Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 mt-6 lg:mt-0 lg:ml-6">
+            <button
+              onClick={exportToPDF}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-500/15 to-red-600/15 border border-red-500/25 px-5 py-3 text-sm font-medium text-red-300 transition-all hover:from-red-500/25 hover:to-red-600/25 hover:text-red-200 hover:scale-105 hover:shadow-lg hover:shadow-red-500/10"
+              title="Export as PDF"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Export PDF</span>
+            </button>
+
+            <button
+              onClick={exportToCalendar}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500/15 to-blue-600/15 border border-blue-500/25 px-5 py-3 text-sm font-medium text-blue-300 transition-all hover:from-blue-500/25 hover:to-blue-600/25 hover:text-blue-200 hover:scale-105 hover:shadow-lg hover:shadow-blue-500/10"
+              title="Export to Calendar"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Add to Calendar</span>
+            </button>
           </div>
         </div>
       </header>
